@@ -6,5 +6,5 @@ from .tokens import (
 )
 from .schemas import TokenService, SessionService
 from .password import hash_password as get_password_hash, verify_password
-from .session import create_refresh_session
+from .session import create_refresh_session, deactivate_session
 from .blacklist import is_token_blacklisted

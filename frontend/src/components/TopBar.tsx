@@ -1,9 +1,12 @@
 'use client'
 
-import { Bell } from 'lucide-react'
-import { TopBarProps } from '@/types'
+import { LogOut } from 'lucide-react'
+import { useApp } from '@/contexts/AppContext'
+import NotificationBell from './NotificationBell'
 
-export default function TopBar({ role, onRoleToggle, hasNotification, onNotificationClick }: TopBarProps) {
+export default function TopBar() {
+    const { user, logout } = useApp()
+
     return (
         <header className="h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-8">
             {/* Breadcrumbs */}
@@ -11,45 +14,31 @@ export default function TopBar({ role, onRoleToggle, hasNotification, onNotifica
                 <span className="text-zinc-400">Workspace</span>
                 <span className="text-zinc-300">/</span>
                 <span className="text-black font-medium">
-                    {role === 'teamlead' ? 'Team Lead Dashboard' : 'My Tasks'}
+                    {user?.is_lead ? 'Team Lead Dashboard' : 'My Tasks'}
                 </span>
             </div>
 
-            {/* Right Section: Role Switcher + Notification */}
+            {/* Right Section: User Info */}
             <div className="flex items-center gap-4">
-                {/* Role Switcher Toggle */}
-                <div className="flex items-center gap-3 bg-zinc-50 rounded-lg p-1 border border-zinc-200">
-                    <button
-                        onClick={onRoleToggle}
-                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${role === 'teamlead'
-                                ? 'bg-black text-white'
-                                : 'bg-transparent text-zinc-600 hover:text-black'
-                            }`}
-                    >
-                        Team Lead
-                    </button>
-                    <button
-                        onClick={onRoleToggle}
-                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${role === 'employee'
-                                ? 'bg-black text-white'
-                                : 'bg-transparent text-zinc-600 hover:text-black'
-                            }`}
-                    >
-                        Employee
-                    </button>
-                </div>
-
                 {/* Notification Bell */}
-                <button
-                    onClick={onNotificationClick}
-                    className="relative p-2 hover:bg-zinc-100 rounded-lg transition-colors"
-                    aria-label="Notifications"
-                >
-                    <Bell className="w-5 h-5 text-zinc-700" />
-                    {hasNotification && (
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-                    )}
-                </button>
+                <NotificationBell />
+
+                {/* User Info */}
+                {user && (
+                    <div className="flex items-center gap-3 pl-3 border-l border-zinc-200">
+                        <div className="text-right">
+                            <div className="text-sm font-medium text-black">{user.username}</div>
+                            <div className="text-xs text-zinc-500">{user.is_lead ? 'Team Lead' : 'Employee'}</div>
+                        </div>
+                        <button
+                            onClick={logout}
+                            className="p-2 hover:bg-zinc-100 rounded-lg transition-colors"
+                            title="Logout"
+                        >
+                            <LogOut className="w-5 h-5 text-zinc-700" />
+                        </button>
+                    </div>
+                )}
             </div>
         </header>
     )

@@ -1,122 +1,131 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import PageHeader from '@/components/PageHeader'
 import StatCard from '@/components/StatCard'
-import { CheckSquare, Clock, TrendingUp, Users, Activity } from 'lucide-react'
-import { ActivityItem } from '@/types'
-
-const mockActivities: ActivityItem[] = [
-    {
-        id: 1,
-        type: 'task_completed',
-        title: 'Task Completed',
-        description: 'Design System Audit was completed by John Doe',
-        timestamp: '2 hours ago',
-        user: 'JD',
-    },
-    {
-        id: 2,
-        type: 'task_created',
-        title: 'New Task Created',
-        description: 'Refactor Auth Middleware was created by AI Agent',
-        timestamp: '3 hours ago',
-        user: 'AI',
-    },
-    {
-        id: 3,
-        type: 'member_added',
-        title: 'Team Member Added',
-        description: 'Sarah Miller joined the team',
-        timestamp: '5 hours ago',
-        user: 'SM',
-    },
-    {
-        id: 4,
-        type: 'comment_added',
-        title: 'Comment Added',
-        description: 'Alex Kim commented on API Integration',
-        timestamp: '1 day ago',
-        user: 'AK',
-    },
-]
+import { CheckSquare, Clock, TrendingUp, Users, Activity, AlertTriangle } from 'lucide-react'
+import { tasksApi } from '@/services/api'
+import { TaskStatistics, BackendTask } from '@/types'
 
 export default function DashboardPage() {
+    const [stats, setStats] = useState<TaskStatistics | null>(null)
+    const [recentTasks, setRecentTasks] = useState<BackendTask[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch stats
+                const statsData = await tasksApi.getMyStats()
+                setStats(statsData)
+
+                // Fetch recent tasks as activity log
+                const tasksData = await tasksApi.getMyTasks({ page: 1, page_size: 5 })
+                setRecentTasks(tasksData.tasks || [])
+            } catch (error) {
+                console.error('Failed to fetch dashboard data:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchData()
+    }, [])
+
+    if (loading) {
+        return <div className="p-8 text-center text-zinc-500">Loading dashboard...</div>
+    }
+
     return (
         <div className="p-8">
             <PageHeader
                 title="Dashboard"
-                description="Overview of your tasks, team performance, and recent activity"
+                description="Overview of your tasks and recent activity"
             />
 
             {/* Statistics Grid */}
             <div className="grid grid-cols-4 gap-6 mb-12">
                 <StatCard
                     title="Total Tasks"
-                    value={24}
+                    value={stats?.total || 0}
                     icon={<CheckSquare className="w-5 h-5 text-black" />}
-                    trend={{ value: 12, isPositive: true }}
                 />
                 <StatCard
                     title="In Progress"
-                    value={8}
+                    value={stats?.in_progress || 0}
                     icon={<Clock className="w-5 h-5 text-black" />}
                 />
                 <StatCard
                     title="Completed"
-                    value={14}
+                    value={stats?.done || 0}
                     icon={<TrendingUp className="w-5 h-5 text-black" />}
-                    trend={{ value: 8, isPositive: true }}
                 />
                 <StatCard
-                    title="Team Members"
-                    value={6}
-                    icon={<Users className="w-5 h-5 text-black" />}
+                    title="Overdue"
+                    value={stats?.overdue || 0}
+                    icon={<AlertTriangle className="w-5 h-5 text-red-500" />}
                 />
             </div>
 
-            {/* Recent Activity */}
+            {/* Recent Activity (Tasks) */}
             <div className="bg-white border border-zinc-200 rounded-lg p-6">
                 <div className="flex items-center gap-3 mb-6">
                     <Activity className="w-5 h-5 text-black" />
-                    <h2 className="text-xl font-semibold text-black">Recent Activity</h2>
+                    <h2 className="text-xl font-semibold text-black">Recent Tasks</h2>
                 </div>
 
                 <div className="space-y-4">
-                    {mockActivities.map((activity) => (
-                        <div
-                            key={activity.id}
-                            className="flex items-start gap-4 p-4 rounded-lg hover:bg-zinc-50 transition-colors"
-                        >
-                            {/* User Avatar */}
-                            <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
-                                {activity.user}
-                            </div>
+                    {recentTasks.length > 0 ? (
+                        recentTasks.map((task) => (
+                            <div
+                                key={task.id}
+                                className="flex items-start gap-4 p-4 rounded-lg hover:bg-zinc-50 transition-colors border border-zinc-100"
+                            >
+                                {/* Status Indicator */}
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 ${task.status === 'done' ? 'bg-green-100 text-green-700' :
+                                        task.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                            'bg-zinc-100 text-zinc-700'
+                                    }`}>
+                                    {task.status === 'done' ? '✓' :
+                                        task.status === 'in_progress' ? '↻' : '○'}
+                                </div>
 
-                            {/* Activity Content */}
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <h3 className="text-sm font-semibold text-black mb-1">
-                                            {activity.title}
-                                        </h3>
-                                        <p className="text-sm text-zinc-600">
-                                            {activity.description}
-                                        </p>
+                                {/* Task Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h3 className="text-sm font-semibold text-black mb-1">
+                                                {task.title}
+                                            </h3>
+                                            <p className="text-sm text-zinc-600 line-clamp-1">
+                                                {task.description || 'No description'}
+                                            </p>
+                                        </div>
+                                        <span className="text-xs text-zinc-400 whitespace-nowrap">
+                                            {new Date(task.created_at).toLocaleDateString()}
+                                        </span>
                                     </div>
-                                    <span className="text-xs text-zinc-400 whitespace-nowrap">
-                                        {activity.timestamp}
-                                    </span>
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                                                task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-green-100 text-green-700'
+                                            }`}>
+                                            {task.priority}
+                                        </span>
+                                        {task.room_id && (
+                                            <span className="text-xs text-zinc-400">
+                                                Room #{task.room_id}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* Activity Type Indicator */}
-                            <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-2 ${activity.type === 'task_completed' ? 'bg-zinc-700' :
-                                    activity.type === 'task_created' ? 'bg-zinc-500' :
-                                        activity.type === 'member_added' ? 'bg-zinc-400' :
-                                            'bg-zinc-300'
-                                }`} />
+                        ))
+                    ) : (
+                        <div className="text-center py-8 text-zinc-500">
+                            No recent tasks found
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
 
@@ -133,10 +142,10 @@ export default function DashboardPage() {
 
                 <button className="bg-white border border-zinc-200 rounded-lg p-6 text-left hover:shadow-md transition-all group">
                     <div className="text-lg font-semibold text-black mb-2 group-hover:text-zinc-700">
-                        Invite Team Member
+                        View My Tasks
                     </div>
                     <div className="text-sm text-zinc-600">
-                        Add a new member to your team
+                        See all tasks assigned to you
                     </div>
                 </button>
 
@@ -145,7 +154,7 @@ export default function DashboardPage() {
                         View Reports
                     </div>
                     <div className="text-sm text-zinc-600">
-                        Analyze team performance metrics
+                        Analyze performance metrics
                     </div>
                 </button>
             </div>

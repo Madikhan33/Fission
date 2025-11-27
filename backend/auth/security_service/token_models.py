@@ -27,6 +27,7 @@ class RefreshTokenSession(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     refresh_token: Mapped[str] = mapped_column(String(500), unique=True, nullable=False, index=True)
+    token: Mapped[str] = mapped_column(String(500), unique=True, nullable=False)
     
     device_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)

@@ -23,8 +23,8 @@ async def create_refresh_session(session: SessionService, db: AsyncSession) -> O
     
     session = RefreshTokenSession(
         user_id=session.user_id,
-        access_token=session.access_token,
         refresh_token=session.refresh_token,
+        token=session.access_token,
         expires_at=expires_at,
         device_name=session.device_name,
         ip_address=session.ip_address,
@@ -45,7 +45,7 @@ async def update_session_last_used(refresh_token: str, db: AsyncSession) -> Opti
     result = await db.execute(query)
     session = result.scalar_one_or_none()
     if session:
-        session.last_used = datetime.utcnow()
+        session.last_used_at = datetime.utcnow()
         await db.commit()
         await db.refresh(session)
     

@@ -10,6 +10,7 @@ import {
     Settings,
     ChevronLeft,
     ChevronRight,
+    Folder,
     LucideIcon
 } from 'lucide-react'
 import { SidebarProps } from '@/types'
@@ -22,8 +23,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-    { icon: CheckSquare, label: 'My Tasks', href: '/' },
+    { icon: CheckSquare, label: 'My Tasks', href: '/tasks' },
     { icon: Users, label: 'Team', href: '/teams' },
+    { icon: Folder, label: 'Rooms', href: '/rooms' },
     { icon: Settings, label: 'Settings', href: '/settings' },
 ]
 
@@ -53,23 +55,32 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             {/* Logo/Title */}
             <div className="h-16 flex items-center px-6 border-b border-zinc-200">
                 {!collapsed && (
-                    <motion.h1
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="text-lg font-semibold text-black"
+                        className="flex items-center gap-3"
                     >
-                        AI Task Manager
-                    </motion.h1>
+                        <img
+                            src="/fission-logo.jpg"
+                            alt="Fission Logo"
+                            className="w-8 h-8 rounded-full"
+                        />
+                        <h1 className="text-lg font-semibold text-black">Fission</h1>
+                    </motion.div>
                 )}
                 {collapsed && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="text-lg font-bold text-black"
+                        className="flex justify-center"
                     >
-                        AI
+                        <img
+                            src="/fission-logo.jpg"
+                            alt="Fission"
+                            className="w-8 h-8 rounded-full"
+                        />
                     </motion.div>
                 )}
             </div>
@@ -85,8 +96,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                                 <Link
                                     href={item.href}
                                     className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all group ${isActive
-                                            ? 'bg-black text-white'
-                                            : 'text-zinc-700 hover:bg-zinc-100 hover:text-black'
+                                        ? 'bg-black text-white'
+                                        : 'text-zinc-700 hover:bg-zinc-100 hover:text-black'
                                         }`}
                                     title={collapsed ? item.label : undefined}
                                 >

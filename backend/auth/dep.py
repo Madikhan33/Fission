@@ -7,6 +7,7 @@ from auth.models import User
 from sqlalchemy import select
 from .security_service import is_token_blacklisted
 from .security_service.schemas import BlacklistService
+from .security_service.token_models import RefreshTokenSession
 
 security = HTTPBearer()
 
@@ -55,10 +56,8 @@ async def get_current_user(credentials: HTTPBearer = Depends(security), db: Asyn
         query = select(User).where(User.id == user_id)
         result = await db.execute(query)
         user = result.scalar_one_or_none()
-        await db.commit()
 
-    except:
-        await db.rollback()
+    except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
 
     if user is None:
@@ -66,6 +65,9 @@ async def get_current_user(credentials: HTTPBearer = Depends(security), db: Asyn
 
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not active")
+
+    # Check if the session is still active
+    
 
     return user
 
@@ -83,8 +85,6 @@ async def get_lead_user(current_user: Depends(get_current_user)) -> User:
 
 #Получаем текущего активного пользователя
 async def get_is_active_user(current_user: Depends(get_current_user)) -> User:
-
-
     if not current_user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not active")
     

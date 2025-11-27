@@ -7,6 +7,8 @@ import Sidebar from '@/components/Sidebar'
 import TopBar from '@/components/TopBar'
 import Toast from '@/components/Toast'
 import { AppProvider, useApp } from '@/contexts/AppContext'
+import { Toaster } from 'react-hot-toast'
+import Head from 'next/head'
 
 const inter = Inter({
     subsets: ['latin'],
@@ -14,23 +16,19 @@ const inter = Inter({
     display: 'swap',
 })
 
+import { usePathname } from 'next/navigation'
+
 function LayoutContent({ children }: { children: ReactNode }) {
-    const {
-        role,
-        setRole,
-        hasNewNotification,
-        setHasNewNotification,
-        showToast
-    } = useApp()
+    const pathname = usePathname()
+    const isAuthPage = pathname === '/auth'
+
+    const { showToast } = useApp()
 
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
-    const toggleRole = () => {
-        setRole(role === 'teamlead' ? 'employee' : 'teamlead')
-    }
-
-    const clearNotification = () => {
-        setHasNewNotification(false)
+    // Don't show sidebar/topbar on auth page
+    if (isAuthPage) {
+        return <div className="h-screen bg-white">{children}</div>
     }
 
     return (
@@ -44,12 +42,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
             {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Top Bar */}
-                <TopBar
-                    role={role}
-                    onRoleToggle={toggleRole}
-                    hasNotification={hasNewNotification}
-                    onNotificationClick={clearNotification}
-                />
+                <TopBar />
 
                 {/* Main View Area */}
                 <main className="flex-1 overflow-auto bg-white">
@@ -66,11 +59,22 @@ function LayoutContent({ children }: { children: ReactNode }) {
 export default function RootLayout({ children }: { children: ReactNode }) {
     return (
         <html lang="en">
+            <head>
+                <title>Fission - AI-Powered Task Management</title>
+                <meta name="description" content="AI-powered collaborative task management platform" />
+                <link rel="icon" href="/fission-logo.jpg" />
+            </head>
             <body className={inter.className}>
                 <AppProvider>
                     <LayoutContent>{children}</LayoutContent>
+                    <Toaster position="top-right" />
+                    {/* Global Toast Container for WebSocket notifications */}
+                    <ToastContainer />
                 </AppProvider>
             </body>
         </html>
     )
 }
+
+// Import ToastContainer
+import ToastContainer from '@/components/ToastContainer'

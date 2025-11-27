@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PageHeader from '@/components/PageHeader'
-import { User, Bell, Shield, Palette } from 'lucide-react'
+import { User, Bell, Shield, Palette, FileText } from 'lucide-react'
 import { SettingsTab } from '@/types'
 
 export default function SettingsPage() {
@@ -10,6 +10,7 @@ export default function SettingsPage() {
 
     const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
         { id: 'profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
+        { id: 'resume', label: 'Resume', icon: <FileText className="w-4 h-4" /> },
         { id: 'preferences', label: 'Preferences', icon: <Palette className="w-4 h-4" /> },
         { id: 'notifications', label: 'Notifications', icon: <Bell className="w-4 h-4" /> },
         { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
@@ -31,8 +32,8 @@ export default function SettingsPage() {
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id
-                                        ? 'bg-black text-white'
-                                        : 'text-zinc-700 hover:bg-zinc-100'
+                                    ? 'bg-black text-white'
+                                    : 'text-zinc-700 hover:bg-zinc-100'
                                     }`}
                             >
                                 {tab.icon}
@@ -45,6 +46,7 @@ export default function SettingsPage() {
                 {/* Content Area */}
                 <div className="flex-1 bg-white border border-zinc-200 rounded-lg p-8">
                     {activeTab === 'profile' && <ProfileSettings />}
+                    {activeTab === 'resume' && <ResumeSettings />}
                     {activeTab === 'preferences' && <PreferencesSettings />}
                     {activeTab === 'notifications' && <NotificationSettings />}
                     {activeTab === 'security' && <SecuritySettings />}
@@ -108,6 +110,165 @@ function ProfileSettings() {
             <button className="bg-black text-white px-6 py-2.5 rounded-lg font-medium hover:bg-zinc-800 transition-colors">
                 Save Changes
             </button>
+        </div>
+    )
+}
+
+function ResumeSettings() {
+    const [file, setFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [resumeData, setResumeData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadResumeData();
+    }, []);
+
+    const loadResumeData = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/resume-ai/', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setResumeData(data);
+            }
+        } catch (error) {
+            console.error('Failed to load resume:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) return;
+
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('http://localhost:8000/resume-ai/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setResumeData(data);
+                setFile(null);
+                alert('Resume uploaded and analyzed successfully!');
+            } else {
+                alert('Failed to upload resume');
+            }
+        } catch (error) {
+            console.error('Upload failed:', error);
+            alert('Upload failed');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    return (
+        <div className="space-y-6">
+            <h2 className="text-2xl font-semibold text-black mb-6">Resume Analysis</h2>
+
+            {/* Upload Section */}
+            <div className="p-6 border-2 border-dashed border-zinc-200 rounded-lg">
+                <div className="text-center">
+                    <FileText className="w-12 h-12 text-zinc-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-black mb-2">
+                        Upload Your Resume
+                    </h3>
+                    <p className="text-sm text-zinc-500 mb-4">
+                        Upload a PDF resume to let AI analyze your skills and experience
+                    </p>
+                    <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="resume-upload"
+                    />
+                    <label
+                        htmlFor="resume-upload"
+                        className="inline-block px-4 py-2 bg-zinc-100 text-black rounded-lg font-medium hover:bg-zinc-200 transition-colors cursor-pointer"
+                    >
+                        Choose PDF File
+                    </label>
+                    {file && (
+                        <div className="mt-4">
+                            <p className="text-sm text-zinc-600">Selected: {file.name}</p>
+                            <button
+                                onClick={handleUpload}
+                                disabled={uploading}
+                                className="mt-2 px-6 py-2 bg-black text-white rounded-lg font-medium hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                            >
+                                {uploading ? 'Uploading...' : 'Upload & Analyze'}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Resume Data Display */}
+            {resumeData && (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-black">Extracted Information</h3>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-black mb-1">Full Name</label>
+                            <div className="px-4 py-2 bg-zinc-50 rounded-lg text-sm">{resumeData.full_name || 'N/A'}</div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-black mb-1">Email</label>
+                            <div className="px-4 py-2 bg-zinc-50 rounded-lg text-sm">{resumeData.email || 'N/A'}</div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-black mb-1">Years of Experience</label>
+                            <div className="px-4 py-2 bg-zinc-50 rounded-lg text-sm">{resumeData.years_of_experience || 'N/A'}</div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-black mb-1">Career Level</label>
+                            <div className="px-4 py-2 bg-zinc-50 rounded-lg text-sm">{resumeData.career_level || 'N/A'}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-black mb-1">Professional Summary</label>
+                        <div className="px-4 py-2 bg-zinc-50 rounded-lg text-sm">{resumeData.professional_summary || 'N/A'}</div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-black mb-1">Core Skills</label>
+                        <div className="px-4 py-2 bg-zinc-50 rounded-lg text-sm">
+                            {resumeData.core_skills ? JSON.parse(resumeData.core_skills).join(', ') : 'N/A'}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {!resumeData && !loading && (
+                <div className="text-center text-zinc-500 py-8">
+                    <p>No resume data found. Upload your resume to get started.</p>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "rag-service"
+version = "1.0.0"
+description = "RAG Microservice with Hybrid Search"
+authors = ["Madikhan33 <madizhysip@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.121.3"
+granian = {extras = ["reload"], version = "^2.6.0"}
+FlagEmbedding = "^1.2.11"
+pymilvus = "^2.5.0"
+langchain-text-splitters = "^0.3.4"
+sentence-transformers = "^3.3.1"
+torch = "^2.6.0"
+pydantic = "^2.12.4"
+python-multipart = "^0.0.20"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

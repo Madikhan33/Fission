@@ -1,87 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PageHeader from '@/components/PageHeader'
 import { Search, UserPlus, Mail, MoreVertical } from 'lucide-react'
-import { TeamMember } from '@/types'
-
-const mockTeamMembers: TeamMember[] = [
-    {
-        id: 1,
-        name: 'John Doe',
-        email: 'john.doe@company.com',
-        role: 'Frontend Developer',
-        avatar: 'JD',
-        status: 'online',
-        tasksAssigned: 8,
-        tasksCompleted: 12,
-    },
-    {
-        id: 2,
-        name: 'Sarah Miller',
-        email: 'sarah.miller@company.com',
-        role: 'Backend Developer',
-        avatar: 'SM',
-        status: 'online',
-        tasksAssigned: 6,
-        tasksCompleted: 15,
-    },
-    {
-        id: 3,
-        name: 'Alex Kim',
-        email: 'alex.kim@company.com',
-        role: 'UI/UX Designer',
-        avatar: 'AK',
-        status: 'away',
-        tasksAssigned: 4,
-        tasksCompleted: 9,
-    },
-    {
-        id: 4,
-        name: 'Maria Garcia',
-        email: 'maria.garcia@company.com',
-        role: 'Product Manager',
-        avatar: 'MG',
-        status: 'offline',
-        tasksAssigned: 10,
-        tasksCompleted: 18,
-    },
-    {
-        id: 5,
-        name: 'David Chen',
-        email: 'david.chen@company.com',
-        role: 'DevOps Engineer',
-        avatar: 'DC',
-        status: 'online',
-        tasksAssigned: 5,
-        tasksCompleted: 11,
-    },
-    {
-        id: 6,
-        name: 'Emma Wilson',
-        email: 'emma.wilson@company.com',
-        role: 'QA Engineer',
-        avatar: 'EW',
-        status: 'away',
-        tasksAssigned: 7,
-        tasksCompleted: 14,
-    },
-]
+import { authApi } from '@/services/api'
+import { User } from '@/types'
 
 export default function TeamsPage() {
     const [searchQuery, setSearchQuery] = useState('')
+    const [users, setUsers] = useState<User[]>([])
+    const [loading, setLoading] = useState(true)
 
-    const filteredMembers = mockTeamMembers.filter(member =>
-        member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        member.role.toLowerCase().includes(searchQuery.toLowerCase())
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                // FIXED: Use getTeamMembers to get only users from same rooms
+                const data = await authApi.getTeamMembers()
+                setUsers(data)
+            } catch (error) {
+                console.error('Failed to fetch team members:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchUsers()
+    }, [])
+
+    const filteredMembers = users.filter(user =>
+        user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase())
     )
+
+    if (loading) {
+        return <div className="p-8 text-center text-zinc-500">Loading team members...</div>
+    }
 
     return (
         <div className="p-8">
             <PageHeader
                 title="Team"
-                description="Manage your team members and view their performance"
+                description="Manage your team members"
                 action={
                     <button className="bg-black text-white px-6 py-2.5 rounded-lg font-medium hover:bg-zinc-800 transition-colors flex items-center gap-2">
                         <UserPlus className="w-4 h-4" />
@@ -106,9 +65,9 @@ export default function TeamsPage() {
 
             {/* Team Members Grid */}
             <div className="grid grid-cols-3 gap-6">
-                {filteredMembers.map((member) => (
+                {filteredMembers.map((user) => (
                     <div
-                        key={member.id}
+                        key={user.id}
                         className="bg-white border border-zinc-200 rounded-lg p-6 hover:shadow-md transition-all"
                     >
                         {/* Header */}
@@ -116,21 +75,20 @@ export default function TeamsPage() {
                             <div className="flex items-center gap-3">
                                 {/* Avatar with Status */}
                                 <div className="relative">
-                                    <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-base font-medium">
-                                        {member.avatar}
+                                    <div className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center text-base font-medium uppercase">
+                                        {user.username.substring(0, 2)}
                                     </div>
-                                    <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${member.status === 'online' ? 'bg-zinc-700' :
-                                            member.status === 'away' ? 'bg-zinc-400' :
-                                                'bg-zinc-300'
-                                        }`} />
+                                    <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-zinc-300" title="Offline" />
                                 </div>
 
                                 {/* Name & Role */}
                                 <div>
                                     <h3 className="text-base font-semibold text-black">
-                                        {member.name}
+                                        {user.username}
                                     </h3>
-                                    <p className="text-xs text-zinc-500">{member.role}</p>
+                                    <p className="text-xs text-zinc-500">
+                                        {user.is_lead ? 'Team Lead' : 'Employee'}
+                                    </p>
                                 </div>
                             </div>
 
@@ -143,20 +101,20 @@ export default function TeamsPage() {
                         {/* Email */}
                         <div className="flex items-center gap-2 mb-4 text-sm text-zinc-600">
                             <Mail className="w-4 h-4" />
-                            <span className="truncate">{member.email}</span>
+                            <span className="truncate">{user.email}</span>
                         </div>
 
-                        {/* Stats */}
+                        {/* Stats Placeholder */}
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-100">
                             <div>
                                 <div className="text-xl font-bold text-black">
-                                    {member.tasksAssigned}
+                                    -
                                 </div>
                                 <div className="text-xs text-zinc-500">Assigned</div>
                             </div>
                             <div>
                                 <div className="text-xl font-bold text-black">
-                                    {member.tasksCompleted}
+                                    -
                                 </div>
                                 <div className="text-xs text-zinc-500">Completed</div>
                             </div>

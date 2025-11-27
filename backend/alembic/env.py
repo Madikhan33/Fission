@@ -5,9 +5,32 @@ from sqlalchemy import pool
 
 from alembic import context
 
+# Импортируем настройки и Base для автогенерации миграций
+import sys
+from pathlib import Path
+
+# Добавляем корневую директорию проекта в sys.path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from core.config import settings
+from core.database import Base
+
+# Импортируем все модели, чтобы они были зарегистрированы в Base.metadata
+from auth.models import User
+from auth.security_service.token_models import TokenBlacklist, RefreshTokenSession  # noqa
+from my_tasks.models import Task, TaskAssignment, TaskPriority, TaskStatus  # noqa
+from resume_ai.models import ResumeAnalysis
+from rooms.models import Room, RoomMember, RoomRole
+from ai.models import AIAnalysisHistory
+from notifications.models import Notification
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# Устанавливаем URL базы данных из настроек
+# Для Alembic нужен синхронный драйвер (psycopg2), а не asyncpg
+database_url = settings.get_database_url().replace("+asyncpg", "")
+config.set_main_option("sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -16,9 +39,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
